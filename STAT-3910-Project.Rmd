@@ -1,0 +1,818 @@
+---
+title: "Comparing Bayesian and Frequentist Approaches in Estimating Population Mean from Sample Mean: A Dice-Rolling Experiment"
+author: "Heinrich Hattingh, Arnab Kundu"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo = FALSE, include = FALSE}
+# Load libraries
+library(tidyverse)
+library(reshape2)
+library(scales)
+library(MASS)
+library(latex2exp)
+library(RColorBrewer)
+library(abc)
+library(abc.data)
+library(gtools)
+library(ggplot2)
+library(ggpubr)
+```
+
+# \Huge Introduction
+
+## Research Hypothesis
+
+In a die-rolling experiment with $n$ samples of 3-sided or 6-sided dice,
+where $n \in \mathbb{N}$, the sample mean will provide a more accurate
+estimation of the population mean using Bayesian inference compared to
+the Central Limit Theorem. This will be investigated through finding and 
+comparing estimations for the true mean of a dice.
+
+## Background
+
+When you roll a die multiple times, sum the outcomes, and then divide by
+the number of rolls, you calculate the sample average (or sample mean).
+Mathematically, we can calculate the average of a certain die, which is
+referred to as the "true mean" of the die. In this experiment, we aim to
+assess the accuracy of two different methods in approximating the true
+mean using the sample mean, as this particular die-rolling problem is
+not readily analyzed. The two methods are the Frequentist approach,
+which makes inferences based only on the data from the sample, and the
+Bayesian approach, which focuses on incorporating prior knowledge and
+beliefs to estimate parameters and make predictions.
+
+For the Frequentist approach, we will incorporate the Central Limit
+Theorem (CLT) by trying to estimate our population mean ($\mu$) by using
+a large sample of sample means ($Y_{n,k}$). The CLT states that for a
+sufficiently large sample, the distribution of the sample mean
+($\bar{Y}_{n,k}$) approaches a normal distribution, with
+$\mu_\bar{Y}$,the mean of $\bar{Y}_{n,k}$, approximating the population
+mean ($\mu$). By incorporating the CLT, we plan to test our accuracy
+based on different sizes of $n$ and testing using a simulation of our
+samples.
+
+For the Bayesian approach, our main parameters of interest are $\theta$
+and $\bar{Y}_{n,k}$, which we will incorporate into our calculation to
+make an inference on our true mean ($\mu$). The parameter $\theta$
+corresponds to the probability of the die landing on a side, while the
+parameter $\bar{Y}_{n,k}$ is the mean of our sample after considering
+the number of sides ($k$) and number of rolls ($n$). Putting these
+parameters into Bayes theorem, we arrive at our main variable of
+interest, the posterior, which is denoted as $g^*(\theta|\bar{Y}_{n,k})$.
+To determine the posterior, we use the other variables of interest,
+which include the prior, denoted as $g(\theta)$, the likelihood, denoted
+as $L(\bar{Y}_{n,k}|\theta)$, and finally the marginal likelihood,
+denoted as $m(\bar{Y}_{n,k})$. By determining the values of these other
+variables of interests, we can arrive at a conclusion for our posterior
+to help us make inference on $\mu$, the true mean of a single die roll.
+
+## Data Overview
+
+The data for this project will be simulated using R to model the
+outcomes of rolling a $k$-sided die. We plan on generating a large
+number of random dice rolls to analyze the sample mean and compare it
+with the population mean, by way of simulation. The simulation will
+allow us to explore the properties of the sample mean using the CLT and
+its behavior in the Bayesian approach. Each outcome of the die roll will
+be represented as $Y_i$, for the $i$-th die roll, where $Y_i$ can be any
+integer from 1 to $k$. The sample mean, $\bar{Y}_{n,k}$, will represent
+the $n$-th random sample of $Y_i$'s, and by definition, $\bar{Y}_{n,k}$
+will be a real number between 1 and $k$. The "sample()" function in R
+will be used to generate random rolls from a uniform distribution
+representing the $k$-sided die, with the code available in the project
+documentation.
+
+$$\\$$ $$\\$$
+
+# \Huge Frequentist Analysis
+
+## Applying the Central Limit Theorem
+
+Let $Y_1, Y_2,..., Y_n$ be $n$, i.i.d random dice rolls, if we think about
+this we will notice that, $Pr(Y_i=y_i) = \frac{1}{k}$, where
+$y_i = 1,2,...,k$ since we are working with equally weighted die. We can
+calculate the mean ($\mu$) and the variance ($\sigma^2$) as follows
+
+\begin{eqnarray*}
+  \mu &= & E(Y_i) \\
+  \mu &= & 1\frac{1}{k} + 2\frac{1}{k} +...+ k\frac{1}{k} = \frac{1+2+...+k}{k} \\
+  \mu &= & \frac{\frac{k(k+1)}{2}}{k} = \frac{k+1}{2}
+\end{eqnarray*}
+
+Note that,
+$E(Y_i^2) = \frac{1^2+2^2+...+k^2}{k} = \frac{\frac{k(k+1)(2k+1)}{6}}{k} = \frac{(k+1)(2k+1)}{6}$
+and $E(Y_i)^2 = \frac{(k+1)^2}{4}$. Thus,
+
+\begin{eqnarray*}
+  \sigma^2 &= & V(Yi) = E(Y_i^2) - E(Y_i)^2 \\
+  \sigma^2 &= & \frac{(k+1)(2k+1)}{6} - \frac{(k+1)^2}{4} \\
+  \sigma^2 &= & (k+1)\left(\frac{4k+2-3k-3}{12}\right) \\
+  \sigma^2 &= & (k+1)\frac{k-1}{12} =\frac{k^2-1}{12}
+\end{eqnarray*}
+
+Now, since we know that
+$\bar{Y} = \frac{Y_1+Y_2+...+Y_n}{n} = \frac{1}{k}\sum{Y_i}$ we can
+calculate $\mu_\bar{Y}$ and $\sigma_\bar{Y}^2$
+
+$$\mu_\bar{Y} =  E(\bar{Y}) = \frac{1}{n}E\left(\sum{Yi}\right) = \frac{1}{n}n E(Y_i) = \mu = \frac{k+1}{2}$$
+and
+
+$$\sigma_\bar{Y}^2 = V(\bar{Y}) = \frac{1}{n^2}V\left(\sum{Yi}\right) = \frac{1}{n^2}nV(Y_i) = \frac{\sigma^2}{n} = \frac{k^2-1}{12n}$$
+
+$$\\$$We will assume that we are in search of an extremely good
+approximation. Thus, we will consider a margin of error within 1% with a
+95% confidence level (ie. we want to find the amount of samples needed
+for our sample mean to be within 1% of our true mean with a probability
+of 0.95). In mathematical terms we want to find the value of n for which
+$Pr(|\bar{Y}-\mu| \leq \frac{k+1}{2}(\frac{1}{100})) = 0.95$. Which we
+can rewrite as
+$Pr(|\frac{\bar{Y}-\mu}{\sigma_\bar{Y}}| \leq \frac{k+1}{200}(\frac{k^2-1}{12n})^{-1/2}) =0.95$.
+We can simplify the fraction
+$\frac{k+1}{200}(\frac{k^2-1}{12n})^{-1/2} = \frac{k+1}{200}\frac{2 \sqrt{3n}}{\sqrt{k^2-1}} = \frac{\sqrt{3n}(k+1)}{100\sqrt{k^2-1}}$.
+Thus we have
+$$Pr\left(|Z|\leq\frac{\sqrt{3n}(k+1)}{100\sqrt{k^2-1}}\right) = 0.95$$
+which simplifies to
+$$Pr\left(Z\leq\frac{\sqrt{3n}(k+1)}{100\sqrt{k^2-1}}\right) = 0.975$$
+with the corresponding z-score of approximately $1.96$.
+$$1.96 = \frac{\sqrt{3n}(k+1)}{100\sqrt{k^2-1}} $$ solving for $n$ we
+find that $$ \sqrt{3n} = \frac{(\sqrt{k^2-1})196}{k+1} $$ it follows
+that $$ n = \frac{196^2}{3}\frac{k-1}{k+1} $$Thus
+$n = \frac{196^2}{3}\frac{k-1}{k+1}$ samples is needed for the sample
+mean to be within 1% of the true mean with a confidence level of 95%.
+
+## Simulation of a 3-sided and 6-sided die rolling experiment
+
+```{r}
+# 3-sided dice
+# Simulate rolling a die
+die_roll <- function(faces = k){
+  sample(1 : faces, size = n, replace = TRUE)
+}
+# Random seed
+set.seed(777)
+
+# Number of faces on the die 
+k <- 3
+
+# Number of samples needed for margin of error of 1% with a 95% confidence level
+n <- ceiling(((k-1)*196^2)/((k+1)*3))
+
+# Number of random samples
+m <- 100
+y_bars <- numeric(m)
+
+# This loop will simulate and store 100 different sample means each of size n
+for (i in 1 : m){
+  Y_sum <- 0
+  for (j in 1 : n){
+    Y_sum <- Y_sum + sample(1:k, size = 1, replace = TRUE) 
+  }
+  y_bars[i] <- Y_sum/n
+}
+
+# True population mean
+true_mean_1 <- 2
+
+# 1% of the true mean and the lower and upper bounds
+percent_bound_1 <- 0.01 * true_mean_1
+lower_bound_1 <- true_mean_1 - percent_bound_1
+upper_bound_1 <- true_mean_1 + percent_bound_1
+
+# Prepare data for plotting
+dat_1 <- data.frame(y_bar = y_bars)
+
+# Number of samples n
+cat(paste0("Number of samples for the sample mean to be within 1% of true sample mean, n = ", n, "\n"))
+
+# Plot the histogram
+hist(dat_1$y_bar,
+     col = "skyblue", 
+     main = "Histogram of 100 Sample Means for a 3-Sided Dice",  
+     xlab = "Sample Means",
+     ylab = "Frequency",
+     breaks = 16,  
+     border = "black"  
+)
+abline(v = true_mean_1, col = "red", lwd = 2, lty = 2)  # Mean line (red, dashed)
+abline(v = lower_bound_1, col = "green", lwd = 2, lty = 3)  # Lower bound (green, dotted)
+abline(v = upper_bound_1, col = "green", lwd = 2, lty = 3)  # Upper bound (green, dotted)
+abline(v = mean(dat_1$y_bar), col = "purple", lwd = 2, lty = 2)
+legend("topright",
+       legend = c("True Mean", "95% Credible Interval", "Mean of Sample Means"),
+       col = c("red", "green", "purple"),
+       lty = c(2, 3),
+       lwd = 2,
+       bty = "o"  
+)
+```
+
+```{r}
+# 6-sided dice
+# Simulate rolling a die
+die_roll <- function(faces = k){
+  sample(1 : faces, size = n, replace = TRUE)
+}
+# Random seed
+set.seed(777)
+
+# Number of faces on the die 
+k <- 6
+
+# Number of samples needed for margin of error of 1% with a 95% confidence level
+n <- ceiling(((k-1)*196^2)/((k+1)*3))
+
+# Number of random samples
+m <- 100
+
+y_bars <- numeric(m)
+
+# This loop will simulate and store 100 different sample means each of size n
+for (i in 1 : m){
+  Y_sum <- 0
+  for (j in 1 : n){
+    Y_sum <- Y_sum + sample(1:k, size = 1, replace = TRUE) 
+  }
+  y_bars[i] <- Y_sum/n
+}
+
+# True population mean
+true_mean_2 <- 3.5
+
+# 1% of the true mean and the lower and upper bounds
+percent_bound_2 <- 0.01 * true_mean_2
+lower_bound_2 <- true_mean_2 - percent_bound_2
+upper_bound_2 <- true_mean_2 + percent_bound_2
+
+# Prepare data for plotting
+dat_2 <- data.frame(y_bar = y_bars)
+
+#Number of samples n
+cat(paste0("Number of samples for the sample mean to be within 1% of true sample mean, n = ", n, "\n"))
+
+# Plot the histogram
+hist(dat_2$y_bar,
+     col = "skyblue", 
+     main = "Histogram of 100 Sample Means for a 6-Sided Dice",  
+     xlab = "Sample Means",
+     ylab = "Frequency",
+     breaks = 16,  
+     border = "black"  
+)
+abline(v = true_mean_2, col = "red", lwd = 2, lty = 2)  # Mean line (red, dashed)
+abline(v = lower_bound_2, col = "green", lwd = 2, lty = 3)  # Lower bound (green, dotted)
+abline(v = upper_bound_2, col = "green", lwd = 2, lty = 3)  # Upper bound (green, dotted)
+abline(v = mean(dat_2$y_bar), col = "purple", lwd = 2, lty = 2)
+legend("topright",
+       legend = c("True Mean", "95% Credible Interval", "Mean of Sample Means"),
+       col = c("red", "green", "purple"),
+       lty = c(2, 3), 
+       lwd = 2,
+       bty = "o" 
+)
+```
+
+## Analysis of the CLT in our experiment
+
+As stated by the CLT, if we were to repeatedly take samples of the same
+size from the population and calculate the sample mean for each,
+approximately 95% of those sample means would fall within 1% (above or
+below) of the true population mean. We can see from the two tests above
+that if we take 6403 and 9147 samples from a random population of
+3-sided and 6-sided die rolls respectively, 95% of these samples will be
+within 1% percent of the true mean. From the histograms above we can
+count the amount of sample means that are outside of the bounds, but the
+sample means are always less or equal to 5. Since the histogram
+represents 100 sample means, at least 95% of them should fall within our
+bounds and that is exactly what we observe.
+
+$$\\$$ $$\\$$
+
+# \Huge Bayesian Analysis
+
+## Problem setup
+
+Let $\theta_i=$ The probability of rolling a $i$. Then with a equally
+weighted die $\theta_1=\theta_2=\dots =\theta_k=\theta$. In general we
+can set the problem up as follows
+$$g^*(\theta|\bar{Y}_{n,k}) = \frac{L(\bar{Y}_{n,k}|\theta)\cdot g(\theta)}{m(\bar{Y}_{n,k})}$$
+
+First, the prior, $g(\theta)$, will represent our knowledge about
+$\theta$ for a certain type of dice. Since we are assuming the dice is
+equally weighed, $\theta=\theta_1=\theta_2=\dots=\theta_k$. The Symmetric 
+Dirichlet assumes that all outcomes are equally likely, making it a perfect
+fit for scenarios like rolling multiple fair die where there isn't any prior
+knowledge favoring one outcome over another. The Symmetric Dirichlet
+distribution is a common special case of the Dirichlet distribution where
+$\alpha_1=\alpha_2=\dots=\alpha_k=\alpha$. The density function is given
+by 
+$$f(\theta_1, \ldots, \theta_K; \alpha) = \frac{\Gamma(\alpha K)}{\left(\Gamma(\alpha)\right)^K} \prod_{i=1}^{K} \theta_i^{\alpha - 1}$$ 
+Since $\alpha_1=\alpha_2=\dots=\alpha_k=\alpha$, 
+$\alpha_0=\sum \alpha_i =\alpha+\alpha+\dots+\alpha=k\cdot \alpha$. By
+using the mean of the Dirichlet distribution we can calculate
+$E[\theta_i] = \frac{\alpha_i}{\alpha_0}=\frac{\alpha}{k\alpha}=\frac{1}{k}$,
+which is the same as the prior belief. In reality, this is a 
+strong belief. An example of this would be in a coin flip, where the
+chance of getting heads or tails is 50%, or in other words
+$\frac{1}{2}$. The value, $\alpha$, represents how strongly we believe each
+probability $\theta_i$ should be concentrated around a certain value,
+which in our case is $\frac{1}{k}$. Therefore, we shall choose
+$\alpha \gg 1$. 
+
+Note that $\theta_i$ represents the probability of rolling the $i^{th}$
+face of the die. According to the marginal density of the Dirichlet
+distribution, $\theta_i \sim Beta(\alpha_i,\alpha_0-\alpha_i)$, but
+since we know that $\alpha_i=\alpha$ and $\alpha_0=k\cdot \alpha$
+$\theta_i \sim Beta(\alpha,(k-1)\alpha)$. The marginal density of
+$\theta_i$, $f(\theta_i)$, describes how likely different values of
+$\theta_i$ are, and as we can see from above all the variables are
+distributed the same. Thus, we can say that
+$\theta_1=\cdots=\theta_k=\theta$ and then we can conclude that
+$\theta \sim Beta(\alpha,(k-1)\alpha)$. As a result,
+$$f(\theta) = \frac{1}{B(\alpha,(k-1)\alpha)}\cdot\theta^{\alpha-1}\cdot(1-\theta)^{(k-1)\alpha}$$
+$$E[\theta]=\frac{\alpha}{\alpha+k\alpha-\alpha}=\frac{1}{k}$$
+
+Next, the likelihood asks what the probability of the data is given that
+our hypothesis is true. So in this case it would be asking the
+probability of $\bar{Y}_n=\bar{y}_n$ given $\theta$. Thus, we can
+rewrite it as $L(\bar{Y}_n|\theta)$. We can model the likelihood using
+the distribution of sums of dice rolls, which is derived and discussed
+here, <https://www.analyticscheck.net/posts/sums-dice-rolls>. Consider
+the following equation for the sum of $Y_i$'s,
+
+\begin{eqnarray*}
+  S_{n,k} &= &Y_1+Y_2+\dots+Y_k=\sum{Y_i}\\
+  \bar{Y}_{n,k} &= &\frac{Y_1+Y_2+\dots+Y_k}{n}=\frac{\sum{Y_i}}{n} = \frac{1}{n}\cdot S_{n,k}
+\end{eqnarray*}
+
+The distribution of sums of dice rolls is given by
+$$Pr(S_{n,k}=s) =  \frac{1}{k^n} \sum_{l=0}^{\lfloor \frac{s-n}{ k} \rfloor} (-1)^l \binom{n}{l} \binom{s-kl-1}{n-1}$$
+
+We can use this to find $Pr(\bar{Y}_{n,k}=y)$,
+
+\begin{eqnarray*}
+  Pr(\bar{Y}_{n,k}=y) &=  &Pr(\frac{1}{n}\cdot S_{n,k}=y)=Pr(S_{n,k}=n\cdot y)\\
+  Pr(S_{n,k}=n\cdot y) &= &\frac{1}{k^n} \sum_{l=0}^{\lfloor \frac{n(y-1)}{ k} \rfloor} (-1)^l \binom{n}{l} \binom{n\cdot y-kl-1}{n-1} \\
+  Pr(\bar{Y}_{n,k}=y|\theta=\frac{1}{k}) &=  &\theta^n \sum_{l=0}^{\lfloor \theta{n(y-1)} \rfloor} (-1)^l \binom{n}{l} \binom{n\cdot y-\frac{l}{\theta}-1}{n-1} 
+\end{eqnarray*}
+
+Finally, the marginal likelihood is given by the following function,
+$m(\bar{Y}_{n,k}) = \int_{-\infty}^{\infty} f(\bar{Y}_{n,k},\theta) \, d\theta$,
+where $f(\bar{Y}_{n,k},\theta) = L(\bar{Y}_n|\theta) \cdot g(\theta)$.
+This is where things start getting complicated quickly. We can recall
+that our likelihood function has a combinatorial formula dependent on
+$\theta$, and the upper bound of the summation also depends on $\theta$,
+therefore finding an empirical solution to this equation is almost
+impossible. Numerical techniques can be used to find approximations for
+this integral in certain cases, but as you will see in the following
+section, using Approximate Bayesian Computation can enable us to
+approximate the posterior for our Bayesian analysis.
+
+## Approximate Bayesian Computation
+
+The Approximate Bayesian Computation (ABC) is used to estimate the
+posterior when the likelihood and marginal likelihood are too difficult
+to compute. In our case, the likelihood has a dependence on $\theta$
+that complicates our marginal likelihood function, thus we will use ABC
+to estimate the posterior. First, the prior, $g(\theta)$, has to be
+simulated. We will be using the Beta distribution which comes from the
+Dirichlet distribution as explained above. Recall that we want to choose
+choose $\alpha \gg 1$, so let $\alpha = 10$. We will simulate the prior
+for a 3-sided dice first and then for a 6-sided dice.
+
+```{r}
+k <- 3                  # Number of sides on the die
+alpha <- rep(10, k)     # Shape parameter for Beta distribution
+number_samples <- 6403  # The number of samples was chosen to match the sample size in our Frequentist analysis
+
+# Generate random samples from the Beta distribution for each die side. Each side will have a separate Beta distribution
+samples <- matrix(NA, number_samples, k)
+for (i in 1:k) {
+  samples[, i] <- rbeta(number_samples, alpha[i], alpha[i])
+}
+
+# Normalize each sample so that it sums to 1. In the output, this means that each row will sum to 1
+samples <- t(apply(samples, 1, function(x) x / sum(x)))
+
+# This code is to create bar plots for a number of samples. Arbitrarily, 9 samples were chosen.
+number_samples_to_plot <- 9  
+par(mfrow = c(3, 3))         
+for (i in 1:number_samples_to_plot) {
+  barplot(samples[i, ],
+          main = paste("Sample", i),
+          names.arg = 1:k,
+          ylim = c(0, 1),
+          col = rainbow(k),
+          ylab = "Probability",
+          xlab = "Die Side")
+}
+```
+
+```{r}
+k_2 <- 6                   # Number of sides on the die
+alpha_2 <- rep(10, k_2)    # Shape parameter for Beta distribution
+number_samples_2 <- 9147   # The number of samples was chosen to match the sample size in our Frequentist analysis
+
+# Generate random samples from the Beta distribution for each die side. Each side will have a separate Beta distribution
+samples_2 <- matrix(NA, number_samples_2, k_2)
+for (i_2 in 1:k_2) {
+  samples_2[, i_2] <- rbeta(number_samples_2, alpha_2[i_2], alpha_2[i_2])
+}
+
+# Normalize each sample so that it sums to 1. In the output, this means that each row will sum to 1
+samples_2 <- t(apply(samples_2, 1, function(x) x / sum(x)))
+
+# This code is to create bar plots for a number of samples. Arbitrarily, 9 samples were once again chosen
+number_samples_to_plot_2 <- 9  
+par(mfrow = c(3, 3))         
+for (i_2 in 1:number_samples_to_plot_2) {
+  barplot(samples_2[i_2, ],
+          main = paste("Sample", i_2),
+          names.arg = 1:k_2,
+          ylim = c(0, 1),
+          col = rainbow(k_2),
+          ylab = "Probability",
+          xlab = "Die Side")
+}
+```
+
+Next, the ABC is performed to estimate the posterior,
+$g^*\left(\theta | \bar{Y}_{n,k} \right)$. The procedure involves
+simulating data from the prior distribution using different $\theta$
+values. Next, a distance metric is defined to compare the simulated data
+$(D')$ with the observed data $(D)$. A threshold ε is then set. If the
+distance between $D'$ and $D$ is less than $\varepsilon$, then the
+parameter $\theta$ is accepted. By collecting all accepted parameter
+values, we can construct an approximation of the posterior distribution.
+Mathematically, this looks like $p(D', D) \le \varepsilon$, where
+$p(D', D)$ is the distance metric. More on this topic and the choice of
+the Euclidean distance for the distance function can be found here; 
+<https://bayesiancomputationbook.com/markdown/chp_08.html>. The value of
+$\varepsilon$ is set to 0.05, however a lower value of $\varepsilon$
+would result in less accepted samples and a higher value of
+$\varepsilon$ would result in more accepted samples. We chose an
+$\varepsilon$ value of 0.05 as we want the simulated data to closely
+resemble the true probability of rolling each side. First the ABC is
+done for the 3-sided die, then the ABC for the 6-sided die follows
+below.
+
+```{r}
+# As we don't have observed data, we used the expected value of each side of the die, which is 1/3 for each side
+observed_data <- c(0.3333333, 0.3333333, 0.3333333)
+
+# We use the Euclidean distance between the sample data and the observed data as our chosen method of obtaining the distance between the simulated data and the observed data
+distance_function <- function(samples, observed_data) {
+  return(sqrt(sum((samples - observed_data)^2)))  
+}
+
+# Next, the threshold, ε, is set.
+epsilon <- 0.05
+accepted_samples <- list()
+for (i in 1:number_samples) {
+  distance <- distance_function(samples[i, ], observed_data)
+  if (distance < epsilon) {
+    accepted_samples <- append(accepted_samples, list(samples[i, ]))
+  }
+}
+
+# Combine all the accepted samples into a matrix for easier manipulation
+accepted_samples_matrix <- do.call(rbind, accepted_samples)
+
+# Flatten the matrix into a single vector of all probabilities across all die sides
+all_probabilities <- as.vector(accepted_samples_matrix)
+
+# Number of accepted samples
+number_accepted_samples <- length(accepted_samples)
+print(paste("Number of accepted samples:", number_accepted_samples))
+
+# Histogram for visualization of the accepted samples
+hist(all_probabilities,
+     main = "Histogram of Accepted Samples for the 3-Sided Dice",
+     xlab = "θ",
+     ylab = "Density",
+     col = "skyblue",
+     breaks = 25,  
+     xlim = c(0.28,0.38))
+```
+
+```{r}
+# As we don't have observed data, we used the expected value of each side of the die, which is 1/6 for each side
+observed_data_2 <- c(0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.1666667, 0.1666667)
+
+# We use the Euclidean distance between the sample data and the observed data as our chosen method of obtaining the distance between the simulated data and the observed data
+distance_function_2 <- function(samples_2, observed_data_2) {
+  return(sqrt(sum((samples_2 - observed_data_2)^2)))  
+}
+
+# Next, the threshold, ε, is set.
+epsilon <- 0.05
+accepted_samples_2 <- list()
+for (i_2 in 1:number_samples_2) {
+  distance_2 <- distance_function(samples_2[i_2, ], observed_data_2)
+  if (distance_2 < epsilon) {
+    accepted_samples_2 <- append(accepted_samples_2, list(samples_2[i_2, ]))
+  }
+}
+
+# Combine all the accepted samples into a matrix for easier manipulation
+accepted_samples_matrix_2 <- do.call(rbind, accepted_samples_2)
+
+# Flatten the matrix into a single vector of all probabilities across all die sides
+all_probabilities_2 <- as.vector(accepted_samples_matrix_2)
+
+# Number of accepted samples
+number_accepted_samples_2 <- length(accepted_samples_2)
+print(paste("Number of accepted samples:", number_accepted_samples_2))
+
+# Histogram for visualization of the accepted samples
+hist(all_probabilities_2,
+     main = "Histogram of Accepted Samples for the 6-Sided Dice",
+     xlab = "θ",
+     ylab = "Density",
+     col = "skyblue",
+     breaks = 30, 
+     xlim = c(0.12,0.22))
+```
+
+We have successfully constructed an approximation for the posterior
+distribution, $g^*\left( \theta | \bar{Y}_{n,k} \right)$, using the
+ABC. This will now be used to approximate the mean of a dice roll and we
+will do that 100 times for both a 3-sided and a 6-sided die in order to
+investigate how closely our credible interval will be to the true mean of
+the dice.
+
+## Simulation of a 3-sided and 6-sided die rolling experiment
+
+```{r}
+# Function to simulate a dice roll using the probabilities from samples. Note that this is done because the values simulated earlier where just used for the Beta distribution, rather than being stored.
+simulate_Y_dice <- function(samples) {
+  simulated_Y <- sample(1:3, 1, prob = samples)  
+  return(simulated_Y)
+}
+
+# Number of simulations
+number_simulations <- 100
+
+# List to store means for each simulation
+all_means_1 <- numeric(number_simulations)
+
+# Run the simulation 100 times and store values
+for (simulation in 1:number_simulations) {
+  population_means <- numeric(length(accepted_samples))  
+  for (i in 1:length(accepted_samples)) {
+    samples <- accepted_samples[[i]]
+    value_3 <- simulate_Y_dice(samples)
+    population_means[i] <- value_3
+  }
+  all_means_1[simulation] <- mean(population_means)
+}
+
+# Credible interval
+credible_interval_means_1 <- quantile(all_means_1, c(0.025, 0.975))
+
+# Print results
+cat("Overall Mean of the Sample Means:", mean(all_means_1), "\n")
+cat("95% Credible Interval of Means:", credible_interval_means_1, "\n")
+
+# Plot the histogram of the accepted samples, with the credible interval, mean and legend
+hist(all_means_1, 
+     col = "skyblue", 
+     main = "Historam of 100 Sample Means for a 3-Sided Dice", 
+     xlab = "Sample Means", 
+     ylab = "Frequency", 
+     breaks = 10)
+
+abline(v = 2, col = "red", lwd = 2, lty = 2)
+abline(v = credible_interval_means_1[1], col = "green", lwd = 2, lty = 2)
+abline(v = credible_interval_means_1[2], col = "green", lwd = 2, lty = 2)
+abline(v = mean(all_means_1), col = "purple", lwd = 2, lty = 2)
+
+legend("topright", 
+       legend = c("True Mean", "95% Credible Interval", "Mean of Sample Means"), 
+       col = c("red", "green", "purple"), 
+       lty = c(2, 2, 2), 
+       lwd = 2)
+```
+
+```{r}
+# Function to simulate a dice roll using the probabilities from samples. Note that this is done because the values simulated earlier where just used for the Beta distribution, rather than being stored.
+simulate_Y_dice_2 <- function(samples_2) {
+  simulated_Y_2 <- sample(1:6, 1, prob = samples_2)  
+  return(simulated_Y_2)
+}
+
+# Number of simulations
+number_simulations_2 <- 100
+
+# List to store means for each simulation
+all_means_2 <- numeric(number_simulations_2)
+
+# Run the simulation 100 times and store values
+for (simulation in 1:number_simulations_2) {
+  population_means_2 <- numeric(length(accepted_samples_2))  
+  for (i_2 in 1:length(accepted_samples_2)) {
+    samples_2 <- accepted_samples_2[[i_2]]
+    value_4 <- simulate_Y_dice_2(samples_2)
+    population_means_2[i_2] <- value_4
+  }
+  all_means_2[simulation] <- mean(population_means_2)
+}
+
+# Credible interval
+credible_interval_means_2 <- quantile(all_means_2, c(0.025, 0.975))
+
+# Print results
+cat("Overall Mean of the Sample Means:", mean(all_means_2), "\n")
+cat("95% Credible Interval of Means:", credible_interval_means_2, "\n")
+
+# Plot the histogram of the accepted samples, with the credible interval, mean and legend
+hist(all_means_2, 
+     col = "skyblue", 
+     main = "Historam of 100 Sample Means for a 6-Sided Dice", 
+     xlab = "Sample Means", 
+     ylab = "Frequency", 
+     breaks = 10)
+
+abline(v = 3.5, col = "red", lwd = 2, lty = 2)
+abline(v = credible_interval_means_2[1], col = "green", lwd = 2, lty = 2)
+abline(v = credible_interval_means_2[2], col = "green", lwd = 2, lty = 2)
+abline(v = mean(all_means_2), col = "purple", lwd = 2, lty = 2)
+legend("topright", 
+       legend = c("True Mean", "95% Credible Interval", "Mean of Sample Means"), 
+       col = c("red", "green", "purple"), 
+       lty = c(2, 2, 2), 
+       lwd = 2)
+```
+
+## Analysis of the ABC in our experiment
+
+Bayesian credible intervals provide a 95% probability that the true
+parameter lies within this interval, reflecting the uncertainty about
+the parameter after incorporating both the data and prior information.
+Using the ABC, we successfully created a histogram and a 95% credible
+interval for 100 sample means. This 95% credible interval happens to be
+within approximately 3% of the true mean for both the 3-sided and
+6-sided die experiments, meaning if we were trying to approximate out
+true mean using this method, we would have a 95% probability of being
+within 3% of the true mean. From the two tests, we see that out of the
+accepted samples chosen, in the 3-sided die experiment there are around
+20% of the samples that consistently meet the criteria, and around 12.5% 
+of the samples in the 6-sided die experiment which also consistently met 
+the criteria. However, the percentage of samples accepted depends on $\varepsilon$. 
+Another point of note is that for both the 3-sided and 6-sided die the mean of our
+experiment will be close to the true mean, but not exactly equal to it.
+
+$$\\$$ $$\\$$
+
+# \Huge Final Analysis and Summary
+
+## Summary and Analysis
+
+Before we compare the Frequentist and Bayesian methods we will create a
+summarized plot to visualize our findings.
+
+```{r echo=FALSE, include=TRUE}
+# Individual ggplot histograms
+p1 <- ggplot(dat_1, aes(x = y_bar)) +
+  geom_histogram(binwidth = 0.005, fill = "skyblue", color = "black", bins = 16) +  
+  labs(title = "",  
+       x = "Sample Means", 
+       y = "Frequency") +
+  theme_minimal() +  
+  geom_vline(aes(xintercept = true_mean_1), color = "red", linetype = "dashed", linewidth = 1.2) +
+  geom_vline(aes(xintercept = lower_bound_1), color = "green", linetype = "dotted", linewidth = 1.2) + 
+  geom_vline(aes(xintercept = upper_bound_1), color = "green", linetype = "dotted", linewidth = 1.2) +
+  geom_vline(aes(xintercept = mean(y_bar)), color = "purple", linetype = "dotted", linewidth = 1.2)
+
+p2 <- ggplot(dat_2, aes(x = y_bar)) +
+  geom_histogram(binwidth = 0.005, fill = "skyblue", color = "black", bins = 16) +  
+  labs(title = "",  
+       x = "Sample Means", 
+       y = "Frequency") +
+  theme_minimal() +  
+  geom_vline(aes(xintercept = true_mean_2), color = "red", linetype = "dashed", linewidth = 1.2) +  
+  geom_vline(aes(xintercept = lower_bound_2), color = "green", linetype = "dotted", linewidth = 1.2) + 
+  geom_vline(aes(xintercept = upper_bound_2), color = "green", linetype = "dotted", linewidth = 1.2) +
+  geom_vline(aes(xintercept = mean(y_bar)), color = "purple", linetype = "dotted", linewidth = 1.2)
+
+
+# Plot 3 code
+all_means_1_df <- data.frame(y_bar = all_means_1)
+p3 <- ggplot(all_means_1_df, aes(x = y_bar)) +
+  geom_histogram(binwidth = 0.01, fill = "skyblue", color = "black", bins = 16) +  
+  labs(title = "",  
+       x = "Sample Means", 
+       y = "Frequency") +
+  theme_minimal() +  
+  geom_vline(aes(xintercept = 2), color = "red", linetype = "dashed", linewidth = 1.2) +  
+  geom_vline(aes(xintercept = credible_interval_means_1[1]), color = "green", linetype = "dotted", linewidth = 1.2) + 
+  geom_vline(aes(xintercept = credible_interval_means_1[2]), color = "green", linetype = "dotted", linewidth = 1.2) +
+  geom_vline(aes(xintercept = mean(all_means_1)), color = "purple", linetype = "dotted", linewidth = 1.2) 
+
+# Plot 4 code
+all_means_2_df <- data.frame(y_bar = all_means_2)
+p4 <- ggplot(all_means_2_df, aes(x = y_bar)) +
+  geom_histogram(binwidth = 0.02, fill = "skyblue", color = "black", bins = 16) +  
+  labs(title = "",  
+       x = "Sample Means", 
+       y = "Frequency") +
+  theme_minimal() +  
+  geom_vline(aes(xintercept = 3.5), color = "red", linetype = "dashed", linewidth = 1.2) +  
+  geom_vline(aes(xintercept = credible_interval_means_2[1]), color = "green", linetype = "dotted", linewidth = 1.2) + 
+  geom_vline(aes(xintercept = credible_interval_means_2[2]), color = "green", linetype = "dotted", linewidth = 1.2) +
+  geom_vline(aes(xintercept = mean(all_means_2)), color = "purple", linetype = "dotted", linewidth = 1.2) 
+
+# Arrange the plots into a 2x2 grid
+combined_plot <- ggarrange(
+  p1, p2, p3, p4,
+  ncol = 2, nrow = 2,  
+  labels = c("", "", "", ""),  
+  common.legend = TRUE, 
+  legend = "none" 
+)
+
+# Annotate the combined plot
+final_plot <- annotate_figure(
+  combined_plot,
+  right = text_grob("ABC                               CLT", rot = 90, size = 14, face = "bold"),  # Right label
+  top = text_grob("3-Sided Dice                                        6-Sided Dice", size = 14, face = "bold"),  # Top label
+  bottom = NULL
+)
+
+# Print the final plot
+print(final_plot)
+
+```
+
+If we recall from the Frequentist Analysis chapter, the CLT will
+guarantee that 95% of the samples will fall within 1% of the true mean
+of the die and from the Bayesian Analysis chapter, we found that any
+given sample has a 95% probability of being within 3% of the true mean
+of a die. Comparing these two methods side by side, we notice that their
+distributions look similar and their intervals are also extremely close
+to each other. However, we must be aware that credible intervals and
+confidence intervals do not refer to the same thing, and one might be
+more useful than the other depending on the problem. That being said, if
+we consider the means of the experiments done using the CLT and ABC, we
+will notice that the CLT approximates the true mean better and gives us
+smaller intervals compared to ABC.\
+\
+There were some issues that came up during the course of our project.
+One of the main issues that arose was the computation and incorporation
+of the likelihood function. Multiplying the likelihood and the prior by 
+hand had some difficulties, while calculating the marginal likelihood proved
+to be extremely difficult. In addition, there was an attempt to simulate the
+likelihood in the ABC section, however after a few failed attempts we decided 
+against it. Knowing what we know now, we maybe would have tried approximating 
+the marginal likelihood using numerical techniques, which would have provided 
+more accurate results. In addition, tools such as the Bayes Estimator were 
+discussed, which would have been incorporated if we had more time. Further 
+investigations in comparing these two methods with smaller sample sizes 
+might have proved useful, as the ABC could preform better in that experiment.
+
+## Conclusion
+
+This study examined the accuracy of estimating the population mean for
+dice rolls using two different statistical approaches: the Frequentist
+approach via the Central Limit Theorem (CLT) and the Bayesian approach
+via Approximate Bayesian Computation (ABC). The CLT demonstrated that
+for sufficiently large sample sizes (6403 rolls for 3-sided dice and
+9147 rolls for 6-sided dice), 95% of the sample means fell within 1% of
+the true mean. This confirms that the CLT guarantees the sample mean
+approaches a normal distribution with the mean approaching the true mean
+as the sample size increases. The resulting confidence intervals were
+narrow, indicating high precision.
+
+In contrast, the Bayesian method, using ABC, provided a 95% credible
+interval that captured the true mean with a 95% probability. While these
+intervals were wider (3% around the true mean), they incorporated prior
+knowledge, which could be particularly advantageous in scenarios with
+smaller sample sizes or less controlled data. The Bayesian approach also
+allowed for a probabilistic interpretation of the interval, which is
+more intuitive in certain contexts.
+
+In conclusion, both approaches successfully estimate the true mean of
+dice rolls, but the CLT proved to be more useful and easier to perform.
+The mean of the CLT experiment is closer to the true mean and provides
+more accurate intervals compared to the ABC experiment. Although this
+project allowed for a interesting exploration into the ABC method, we
+have to conclude that our original hypothesis is incorrect, thus the CLT
+proves to be more useful in approximating the true mean from the sample
+mean compared to the ABC method in our dice rolling experiment. This
+comes as the CLT is generally better for larger data sets, and better
+for models without a strong prior belief. Finally, this project provided
+a great insight into the overall discussion of the Frequentist vs
+Bayesian approaches, and introduced some engaging concepts such as the
+ABC.
